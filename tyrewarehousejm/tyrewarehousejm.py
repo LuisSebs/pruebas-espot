@@ -1,3 +1,4 @@
+import re
 import time
 from colorama import Fore
 from selenium import webdriver
@@ -16,6 +17,11 @@ driver = webdriver.Chrome(options=options)
 driver.set_page_load_timeout(60)
 
 driver.get(ENLACE)
+
+def cargar_medidas():
+    with open('./medidas.csv', 'r', encoding='utf-8') as archivo:
+        medidas = archivo.readlines()[1:]
+        return medidas
 
 def select_location():
     find()
@@ -59,25 +65,24 @@ def links():
 
 select_location()
 
-options_width = get_options('width')
-options_profile = get_options('profile')
-options_size = get_options('size')
+medidas = cargar_medidas()
 
 count = 0
 
 with open('medidas.txt', 'a', encoding='utf-8') as archivo:
-    for width in options_width:    
-        for profile in options_profile:
-            for size in options_size:
-                select(width, profile, size)
-                find()
-                try:
-                    count += links()
-                    archivo.write(f"{width}/{profile}R{size}\n")
-                except Exception as e:
-                    print(Fore.YELLOW+f"No se encontraron llantas: {e}"+Fore.RESET)
-                driver.get(ENLACE)
-                print("Llantas encontradas: "+Fore.BLUE+f"{count}"+Fore.RESET)
+    for medida in medidas:        
+        try:
+            match = re.match(r"(\d+)/(\d+)R(\d+)", medida.strip())
+            width, profile, size = match.groups()
+            select(width, profile, size)
+            find()
+            count += links()
+            print("Llantas encontradas: "+Fore.BLUE+f"{count}"+Fore.RESET)
+            archivo.write(f"{width}/{profile}R{size}\n")
+            time.sleep(3)
+        except Exception as e:
+            print(Fore.YELLOW+f"No se encontraron llantas: {e}"+Fore.RESET)
+        driver.get(ENLACE)         
                 
 driver.quit()
 
